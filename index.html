@@ -1,0 +1,735 @@
+<!DOCTYPE html>
+<html lang="bn">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>GST Mission 2026 | Study Dashboard</title>
+    <link rel="manifest" href="manifest.json">
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Tiro+Bangla&family=Outfit:wght@300;400;600;700&display=swap" rel="stylesheet">
+
+    <style>
+        :root {
+            --accent: #0071e3; --bg: #f5f7fa; --card: rgba(255,255,255,0.9);
+            --text: #1d1d1f; --secondary-text: #86868b; --border: rgba(0,0,0,0.05);
+            --success: #34c759; --danger: #ff3b30;
+            --phy: #0071e3; --chem: #28a745; --bio: #d63384; --math: #fd7e14;
+        }
+
+        * { box-sizing: border-box; }
+        body { background-color: var(--bg); color: var(--text); font-family: 'Outfit', sans-serif; margin: 0; padding: 40px 20px; }
+        .bn { font-family: 'Tiro Bangla', serif; }
+        .dashboard { max-width: 1100px; margin: 0 auto; }
+
+        /* ── Header ── */
+        header { display: flex; justify-content: space-between; align-items: flex-end; margin-bottom: 30px; flex-wrap: wrap; gap: 15px; }
+        .timer-container { background: rgba(255,255,255,0.6); backdrop-filter: blur(15px); padding: 10px 20px; border-radius: 18px; border: 1px solid white; display: flex; gap: 15px; align-items: center; }
+        .timer-num { font-size: 1.6rem; font-weight: 700; color: var(--accent); }
+        .timer-label { font-size: 0.65rem; color: var(--secondary-text); text-transform: uppercase; }
+
+        /* ── Push Permission Banner ── */
+        #push-banner {
+            background: linear-gradient(135deg, #0071e3, #5856d6);
+            color: white; padding: 14px 20px; border-radius: 16px;
+            margin-bottom: 20px; display: flex; align-items: center;
+            justify-content: space-between; gap: 15px; flex-wrap: wrap;
+            animation: slideDown 0.4s ease;
+        }
+        #push-banner.hidden { display: none; }
+        @keyframes slideDown { from { opacity: 0; transform: translateY(-10px); } to { opacity: 1; transform: translateY(0); } }
+        .push-btn { background: white; color: #0071e3; border: none; padding: 8px 18px; border-radius: 10px; font-weight: 600; cursor: pointer; font-family: 'Outfit', sans-serif; transition: 0.2s; }
+        .push-btn:hover { transform: scale(1.03); }
+        .push-dismiss { background: none; border: none; color: rgba(255,255,255,0.7); cursor: pointer; font-size: 1.2rem; }
+
+        /* ── Push Status Pill ── */
+        #push-status { display: inline-flex; align-items: center; gap: 6px; font-size: 0.75rem; padding: 4px 12px; border-radius: 20px; margin-left: 10px; font-weight: 600; }
+        #push-status.on  { background: #e8faf0; color: var(--success); }
+        #push-status.off { background: #fff0f0; color: var(--danger); }
+
+        /* ── Focus Section ── */
+        .focus-section { background: var(--card); padding: 30px; border-radius: 24px; border: 1px solid white; box-shadow: 0 10px 30px rgba(0,0,0,0.03); margin-bottom: 30px; }
+        .focus-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); gap: 15px; margin-top: 20px; }
+        .focus-box { background: white; padding: 18px; border-radius: 15px; display: flex; align-items: center; cursor: pointer; border: 1px solid transparent; transition: 0.3s; }
+        .focus-box:hover { border-color: var(--accent); transform: translateY(-2px); }
+        .focus-box.done { background: #f0f9f1; border-color: var(--success); opacity: 0.7; }
+        .dot { height: 8px; width: 8px; border-radius: 50%; background: var(--accent); margin-right: 12px; flex-shrink: 0; }
+
+        /* ── Analytics ── */
+        .analytics-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(300px, 1fr)); gap: 20px; margin-bottom: 40px; }
+        .ana-card { background: var(--card); padding: 25px; border-radius: 24px; border: 1px solid white; position: relative; }
+        .ana-label { font-size: 0.75rem; color: var(--secondary-text); text-transform: uppercase; font-weight: 600; margin-bottom: 15px; display: block; }
+
+        .sub-row { margin-bottom: 18px; position: relative; cursor: pointer; }
+        .sub-meta { display: flex; justify-content: space-between; font-size: 0.85rem; margin-bottom: 5px; }
+        .progress-rail { height: 6px; background: rgba(0,0,0,0.05); border-radius: 10px; overflow: hidden; }
+        .progress-bar { height: 100%; transition: width 0.6s ease; }
+        .tooltip { position: absolute; background: #333; color: #fff; padding: 5px 12px; border-radius: 8px; font-size: 0.75rem; bottom: 110%; left: 50%; transform: translateX(-50%); opacity: 0; transition: 0.3s; pointer-events: none; white-space: nowrap; z-index: 10; }
+        .sub-row:hover .tooltip { opacity: 1; bottom: 120%; }
+        .sub-row:hover .progress-rail { background: rgba(0,0,0,0.1); }
+
+        .circle-ana { display: flex; align-items: center; justify-content: space-around; }
+        .circle-svg { width: 100px; height: 100px; transform: rotate(-90deg); }
+        .circle-bg { fill: none; stroke: rgba(0,0,0,0.05); stroke-width: 8; }
+        .circle-prog { fill: none; stroke: var(--accent); stroke-width: 8; stroke-linecap: round; transition: stroke-dasharray 0.6s ease; }
+
+        /* ── Session Tracker ── */
+        .session-btn { flex: 1; padding: 12px; border-radius: 12px; border: none; color: white; cursor: pointer; font-weight: 600; transition: 0.3s; font-family: 'Outfit', sans-serif; font-size: 0.95rem; }
+        .session-btn:hover { filter: brightness(1.1); transform: translateY(-1px); }
+
+        /* ── Routine Table ── */
+        .routine-container { background: var(--card); border-radius: 24px; padding: 10px; border: 1px solid white; overflow-x: auto; margin-bottom: 30px; }
+        table { width: 100%; border-collapse: collapse; min-width: 800px; }
+        th { padding: 20px; text-align: left; font-size: 0.85rem; color: var(--secondary-text); }
+        td { padding: 18px 20px; border-top: 1px solid var(--border); }
+        .ch-row { display: flex; align-items: center; margin-bottom: 8px; cursor: pointer; }
+        .ch-row input { margin-right: 10px; accent-color: var(--accent); }
+        .checked { opacity: 0.4; text-decoration: line-through; }
+        .priority { color: var(--danger); font-weight: 600; }
+
+        /* ── Reset Btn ── */
+        .reset-btn { display: block; margin: 40px auto; padding: 12px 24px; background: none; border: 1px solid var(--border); color: var(--secondary-text); border-radius: 12px; cursor: pointer; transition: 0.3s; font-family: 'Outfit', sans-serif; }
+        .reset-btn:hover { background: var(--danger); color: white; border-color: var(--danger); }
+
+        /* ── Notification Log ── */
+        #notif-log { position: fixed; bottom: 20px; right: 20px; z-index: 9999; display: flex; flex-direction: column; gap: 8px; max-width: 320px; }
+        .notif-toast { background: #1d1d1f; color: white; padding: 12px 16px; border-radius: 14px; font-size: 0.85rem; animation: toastIn 0.3s ease; box-shadow: 0 8px 24px rgba(0,0,0,0.2); }
+        @keyframes toastIn { from { opacity: 0; transform: translateY(10px); } to { opacity: 1; transform: translateY(0); } }
+    </style>
+</head>
+
+<body>
+<div class="dashboard">
+
+    <header>
+        <div>
+            <h1 class="bn" style="margin: 0 0 5px;">GST স্টাডি ড্যাশবোর্ড</h1>
+            <p id="quote-box" style="color: var(--secondary-text); margin: 0; font-size: 0.9rem;"></p>
+        </div>
+        <div style="text-align: right;">
+            <span class="ana-label bn">সময় বাকি</span>
+            <div class="timer-container">
+                <div class="timer-unit"><span class="timer-num" id="days-val">00</span><span class="timer-label">Days</span></div>
+                <div style="color: #eee; font-size: 1.5rem; font-weight: 300;">|</div>
+                <div class="timer-unit"><span class="timer-num" id="hours-val">00</span><span class="timer-label">Hours</span></div>
+            </div>
+        </div>
+    </header>
+
+    <!-- Push Notification Banner -->
+    <div id="push-banner">
+        <div>
+            <strong>🔔 নোটিফিকেশন চালু করো</strong>
+            <span class="bn" style="font-size: 0.85rem; opacity: 0.9; display: block;">Savage mode, break reminders সব কাজ করবে PC + মোবাইলে</span>
+        </div>
+        <div style="display: flex; gap: 10px; align-items: center;">
+            <button class="push-btn" onclick="requestPushPermission()">Enable করো</button>
+            <button class="push-dismiss" onclick="dismissBanner()">✕</button>
+        </div>
+    </div>
+
+    <!-- Today's Mission -->
+    <section class="focus-section">
+        <h2 class="bn" style="margin:0; font-size: 1.3rem; display: flex; align-items: center; gap: 10px;">
+            🎯 আজকের মিশন: <span id="today-date" style="color: var(--accent);"></span>
+            <span id="push-status" class="off">🔕 Push Off</span>
+        </h2>
+        <div class="focus-grid" id="focus-items"></div>
+    </section>
+
+    <!-- Analytics -->
+    <section class="analytics-grid">
+        <div class="ana-card">
+            <span class="ana-label bn">বিষয়ভিত্তিক প্রগ্রেস</span>
+            <div id="sub-stats"></div>
+        </div>
+
+        <div class="ana-card circle-ana">
+            <div style="text-align: center;">
+                <span class="ana-label bn">সামগ্রিক সম্পন্ন</span>
+                <svg class="circle-svg">
+                    <circle class="circle-bg" cx="50" cy="50" r="40"></circle>
+                    <circle id="circle-val" class="circle-prog" cx="50" cy="50" r="40" stroke-dasharray="0 251"></circle>
+                </svg>
+                <div id="total-pct-text" style="font-weight: 600; margin-top: -65px; font-size: 1.2rem;">0%</div>
+            </div>
+            <div style="text-align: center; margin-top: 50px;">
+                <span class="ana-label bn">স্টাডি স্ট্রিক</span>
+                <span style="font-size: 1.8rem; font-weight: 600;">🔥 <span id="streak-count">0</span> Days</span>
+            </div>
+        </div>
+
+        <div class="ana-card" id="tracker-card" style="transition: 0.3s; border: 1px solid white;">
+            <span class="ana-label bn">স্টাডি সেশন ট্র্যাকার</span>
+            <h2 id="session-timer" style="font-size: 2.2rem; margin: 10px 0; letter-spacing: 1px; font-weight: 700;">00:00:00</h2>
+            <div style="display: flex; gap: 10px;">
+                <button id="start-btn" class="session-btn" onclick="startStudy()" style="background: var(--success);">Start Mission</button>
+                <button id="stop-btn" class="session-btn" onclick="stopStudy()" style="background: var(--danger); display: none;">Stop / Break</button>
+            </div>
+            <p id="total-focus-today" class="bn" style="font-size: 0.85rem; color: var(--secondary-text); margin-top: 15px; font-weight: 600;">আজকের মোট ফোকাস: 0h 0m</p>
+        </div>
+    </section>
+
+    <!-- Routine Table -->
+    <div class="routine-container">
+        <table>
+            <thead>
+                <tr>
+                    <th class="bn">তারিখ</th>
+                    <th class="bn">পদার্থবিজ্ঞান</th>
+                    <th class="bn">রসায়ন</th>
+                    <th class="bn">জীববিজ্ঞান</th>
+                    <th class="bn">উচ্চতর গণিত</th>
+                </tr>
+            </thead>
+            <tbody id="routine-rows"></tbody>
+        </table>
+    </div>
+
+    <!-- Final Strike -->
+    <section class="focus-section" style="margin-top: 40px; border-left: 5px solid var(--danger);">
+        <h2 class="bn" style="margin:0; font-size: 1.3rem; color: var(--danger);">🏁 Final Strike (৬ - ৯ এপ্রিল)</h2>
+        <div class="focus-grid">
+            <div class="focus-box bn"><div class="dot" style="background: var(--danger);"></div><span>৬ এপ্রিল: কঠিন সূত্র ও ফিক্সিং</span></div>
+            <div class="focus-box bn"><div class="dot" style="background: #ff9500;"></div><span>৭ এপ্রিল: রিভিশন ডে</span></div>
+            <div class="focus-box bn"><div class="dot" style="background: var(--success);"></div><span>৮ এপ্রিল: মডেল টেস্ট</span></div>
+            <div class="focus-box bn"><div class="dot" style="background: #5856d6;"></div><span>৯ এপ্রিল: রিল্যাক্স ডে</span></div>
+        </div>
+        <div style="margin-top: 20px; padding: 15px; background: #fff5f5; border-radius: 12px; font-size: 0.9rem;" class="bn">
+            <strong>⚠️ পরীক্ষার হলের ব্যাগ গুছিয়ে নিন:</strong> প্রবেশপত্র, এইচএসসি রেজিস্ট্রেশন কার্ড, অন্তত ৩টি কালো কলম এবং স্বচ্ছ পানির বোতল।
+        </div>
+    </section>
+
+    <button class="reset-btn bn" onclick="resetAll()">Reset All Progress & Cache</button>
+</div>
+
+<!-- Toast Container -->
+<div id="notif-log"></div>
+
+<script>
+// ════════════════════════════════════════════════════════════
+// CONFIG — Replace with your VAPID public key after setup
+// ════════════════════════════════════════════════════════════
+const VAPID_PUBLIC_KEY = 'BElZY1dexIq7PPKGz2SW5TnkkXSYwNXMukI1r_6AKzJBwkrC45d_II-y7SMl4QTxvafly4MsfBpQotGmMj5DxRg';
+// ════════════════════════════════════════════════════════════
+
+const routine = [
+    { date: "২৫ মার্চ", p: ["নিউটনিয়ান বলবিদ্যা"], c: ["গুণগত রসায়ন"], b: ["কোষ ও এর গঠন"], m: ["ম্যাট্রিক্স ও নির্ণায়ক"] },
+    { date: "২৬ মার্চ", p: ["স্থির তড়িৎ"], c: ["মৌলের পর্যাবৃত্ত ধর্ম ও রাসায়নিক বন্ধন"], b: ["অনুজীব"], m: ["সরলরেখা"] },
+    { date: "২৭ মার্চ", p: ["চলতড়িৎ"], c: ["রাসায়নিক পরিবর্তন"], b: ["উদ্ভিদ শারীরতত্ব"], m: ["বৃত্ত"] },
+    { date: "২৮ মার্চ", p: ["তাপগতিবিদ্যা"], c: ["পরিবেশ রসায়ন"], b: ["প্রাণীর বিভিন্নতা ও শ্রেণীবিন্যাস"], m: ["সংযুক্ত কোণের ত্রিকোণমিতিক অনুপাত"] },
+    { date: "২৯ মার্চ", p: ["ভেক্টর"], c: ["জৈব রসায়ন (১)"], b: ["প্রাণীর পরিচিতি"], m: ["অন্তরীকরণ"] },
+    { date: "৩০ মার্চ", p: ["কাজ ক্ষমতা ও শক্তি"], c: ["জৈব রসায়ন (২)"], b: ["জিনতত্ব ও বিবর্তন"], m: ["যোগজীকরণ"] },
+    { date: "৩১ মার্চ", p: ["মহাকর্ষ ও অভিকর্ষ"], c: ["জৈব রসায়ন (৩)"], b: ["জীব প্রযুক্তি"], m: ["জটিল সংখ্যা"] },
+    { date: "১ এপ্রিল", p: ["পদার্থের গাঠনিক ধর্ম"], c: ["পরিমানগত রসায়ন"], b: ["পরিপাক ও শোষণ"], m: ["বহুপদী ও বহুপদী সমীকরণ"] },
+    { date: "২ এপ্রিল", p: ["পর্যাবৃত্ত গতি"], c: ["তড়িৎ রসায়ন"], b: ["রক্ত ও সঞ্চালন"], m: ["কণিক"] },
+    { date: "৩ এপ্রিল", p: ["আদর্শ গ্যাস ও গ্যাসের গতিতত্ব"], c: ["কর্মমূখী রসায়ন"], b: ["শ্বসন ও শ্বাসক্রিয়া"], m: ["বিপরীত ত্রিকোণমিতিক ফাংশন ও ত্রিকোণমিতিক সমীকরণ"] },
+    { date: "৪ এপ্রিল", p: ["আধুনিক পদার্থবিজ্ঞানের সূচনা"], c: ["রিভিশন"], b: ["চলন ও অঙ্গচালনা"], m: ["স্থিতিবিদ্যা"] },
+    { date: "৫ এপ্রিল", p: ["সেমিকন্ডাক্টর ও ইলেক্ট্রনিক্স"], c: ["মডেল টেস্ট"], b: ["কোষ বিভাজন"], m: ["সমতলে বস্তুকণার গতি"] }
+];
+
+// ── State ────────────────────────────────────────────────────
+let studyInterval, startTime;
+let totalSecondsToday = parseInt(localStorage.getItem('total_focus_seconds')) || 0;
+let autoStopTimeout = null;
+let breakReminderTimeout = null;
+let swReg = null;
+
+const savageMessages = [
+    "চান্স না পেলে এই ড্যাশবোর্ড দিয়ে বিরিয়ানি খাবে? পড়তে বসো।",
+    "স্ট্রিক ০ হতে চলেছে। তোমার আলসেমিকে অভিনন্দন! 👏",
+    "ঘড়ির কাঁটা কিন্তু তোমার জন্য বসে নেই, Rongon!",
+    "তোমার কম্পিটিটর এখন হয়তো ২টা চ্যাপ্টার শেষ করে ফেলেছে।",
+    "আইকিউ তো মাশাল্লাহ, কিন্তু পড়ার বেলা ঠনঠন কেন?",
+    "GST কি তোমার মামার বাড়ি? এত রিল্যাক্স কেন?",
+    "১০ এপ্রিল কিন্তু কান্নাকাটি করে লাভ হবে না।",
+    "ফোনটা রেখে বইটা ধরলে কেমন হয়?",
+    "জাস্ট ৫ মিনিট বলে তো ২ ঘণ্টা পার করলে। এবার থামো!",
+    "পড়লে চান্স পাবে, না পড়লে ড্যাশবোর্ড ডিলিট করো।",
+    "আজকের টার্গেট কি কালকের জন্য জমিয়ে রাখছ?",
+    "ভাগ্য নয়, পরিশ্রমই তোমাকে ক্যাম্পাসে নিয়ে যাবে।",
+    "হয় পড়ো, নয়তো এই ড্যাশবোর্ড দেখা বন্ধ করো!"
+];
+
+// ── Init ─────────────────────────────────────────────────────
+function init() {
+    render();
+    updateMission();
+    updateTimer();
+    updateTotalFocusDisplay();
+    setInterval(updateTimer, 60000);
+    document.getElementById('quote-box').innerText = "Focus on the structure, build the success.";
+
+    // Check if push already granted
+    if (Notification.permission === 'granted') {
+        hideBanner();
+        updatePushStatus(true);
+    } else if (Notification.permission === 'denied') {
+        hideBanner();
+        updatePushStatus(false);
+    }
+
+    // Register service worker
+    if ('serviceWorker' in navigator) {
+        navigator.serviceWorker.register('./sw.js')
+            .then(reg => {
+                swReg = reg;
+                console.log('SW registered');
+                // Check existing push subscription
+                return reg.pushManager.getSubscription();
+            })
+            .then(sub => {
+                if (sub) {
+                    updatePushStatus(true);
+                    hideBanner();
+                }
+            })
+            .catch(err => console.warn('SW error:', err));
+
+        // Listen for messages from SW (notification button clicks)
+        navigator.serviceWorker.addEventListener('message', event => {
+            const { action } = event.data || {};
+            if (action === 'cancelAutoStop') {
+                if (autoStopTimeout) clearTimeout(autoStopTimeout);
+                scheduleCheckIn(); // reschedule next check-in after 60 mins
+                showToast('✅ Got it! Next check-in in 1 hour.');
+            } else if (action === 'startBreak') {
+                if (autoStopTimeout) clearTimeout(autoStopTimeout);
+                stopStudy();
+                showToast('☕ Break started. Back in 20 mins!');
+                breakReminderTimeout = setTimeout(() => {
+                    sendContextNotification('break-over', '🔔 Break Over! Rongon, পড়ার টেবিলে ফেরো।');
+                }, 20 * 60 * 1000);
+            } else if (action === 'resumeStudy') {
+                startStudy();
+                showToast('📚 Welcome back! Timer started.');
+            }
+        });
+    }
+
+    // Context-aware: morning check + exam countdown
+    scheduleContextNotifications();
+}
+
+// ── Push Permission ──────────────────────────────────────────
+async function requestPushPermission() {
+    if (!('Notification' in window) || !('serviceWorker' in navigator)) {
+        showToast('❌ এই browser এ push support নেই।');
+        return;
+    }
+
+    const permission = await Notification.requestPermission();
+    if (permission !== 'granted') {
+        showToast('❌ Permission denied. Settings থেকে allow করো।');
+        return;
+    }
+
+    try {
+        const reg = await navigator.serviceWorker.ready;
+        const sub = await reg.pushManager.subscribe({
+            userVisibleOnly: true,
+            applicationServerKey: urlBase64ToUint8Array(VAPID_PUBLIC_KEY)
+        });
+
+        // Save subscription in localStorage (for serverless — self-push)
+        localStorage.setItem('push_subscription', JSON.stringify(sub));
+        updatePushStatus(true);
+        hideBanner();
+        showToast('🔔 নোটিফিকেশন চালু হয়েছে! সব ডিভাইসে পাবে।');
+    } catch (err) {
+        console.error('Push subscription failed:', err);
+        // Fallback: use basic Notification API (no service worker push)
+        updatePushStatus(true);
+        hideBanner();
+        showToast('🔔 Basic notifications চালু। (VAPID key set করলে full push পাবে)');
+    }
+}
+
+function hideBanner() {
+    document.getElementById('push-banner').classList.add('hidden');
+}
+function dismissBanner() {
+    hideBanner();
+    localStorage.setItem('push_banner_dismissed', '1');
+}
+function updatePushStatus(active) {
+    const el = document.getElementById('push-status');
+    el.className = active ? 'on' : 'off';
+    el.textContent = active ? '🔔 Push On' : '🔕 Push Off';
+}
+
+// ── Study Schedule Definition ────────────────────────────────
+const STUDY_SLOTS = [
+    { subject: 'পদার্থবিজ্ঞান', subjectEn: 'Physics',   start: [8,  0],  end: [11, 0]  },
+    { subject: 'রসায়ন',         subjectEn: 'Chemistry', start: [11, 30], end: [14, 0]  },
+    { subject: 'জীববিজ্ঞান',    subjectEn: 'Biology',   start: [15, 30], end: [18, 0]  },
+    { subject: 'উচ্চতর গণিত',   subjectEn: 'Math',      start: [19, 30], end: [22, 0]  },
+];
+
+// Returns the slot currently active (timer should be on), or null
+function getCurrentSlot() {
+    const now = new Date();
+    const h = now.getHours(), m = now.getMinutes();
+    const mins = h * 60 + m;
+    return STUDY_SLOTS.find(s => {
+        const start = s.start[0] * 60 + s.start[1];
+        const end   = s.end[0]   * 60 + s.end[1];
+        return mins >= start && mins < end;
+    }) || null;
+}
+
+// ── Context-Aware Notification Scheduler ────────────────────
+function scheduleContextNotifications() {
+    const now = new Date();
+
+    // ── 1. Slot reminders: 10 min before each session ────────
+    STUDY_SLOTS.forEach(slot => {
+        const reminderH = slot.start[0];
+        const reminderM = slot.start[1] - 10;
+        // Handle minute underflow (e.g. 8:00 → 7:50)
+        const rH = reminderM < 0 ? reminderH - 1 : reminderH;
+        const rM = reminderM < 0 ? reminderM + 60 : reminderM;
+
+        const fire = new Date(); fire.setHours(rH, rM, 0, 0);
+        if (now < fire) {
+            setTimeout(() => {
+                // Only remind if timer is NOT already on
+                if (localStorage.getItem('study_state') !== 'active') {
+                    sendContextNotification('morning',
+                        `📖 ${slot.subject} শুরু হবে ১০ মিনিটে। প্রস্তুত হও, Rongon!`);
+                }
+            }, fire - now);
+        }
+
+        // ── 2. Savage check: 15 min into each session ────────
+        // If timer is still off 15 min after the slot starts → roast
+        const savageH = slot.start[0];
+        const savageM = slot.start[1] + 15;
+        const sH = savageM >= 60 ? savageH + 1 : savageH;
+        const sM = savageM >= 60 ? savageM - 60 : savageM;
+
+        const savageFire = new Date(); savageFire.setHours(sH, sM, 0, 0);
+        if (now < savageFire) {
+            setTimeout(() => {
+                if (localStorage.getItem('study_state') !== 'active') {
+                    const msg = savageMessages[Math.floor(Math.random() * savageMessages.length)];
+                    sendContextNotification('savage',
+                        `${slot.subject} শুরু হয়েছে ১৫ মিনিট আগে। ${msg}`);
+                }
+            }, savageFire - now);
+        }
+
+        // ── 3. Mid-slot savage: every 30 min inside the slot if still idle ──
+        const slotStartMins = slot.start[0] * 60 + slot.start[1];
+        const slotEndMins   = slot.end[0]   * 60 + slot.end[1];
+        const nowMins = now.getHours() * 60 + now.getMinutes();
+
+        // Schedule checks at 30-min intervals through the slot
+        for (let t = slotStartMins + 30; t < slotEndMins; t += 30) {
+            const checkH = Math.floor(t / 60);
+            const checkM = t % 60;
+            const checkTime = new Date(); checkTime.setHours(checkH, checkM, 0, 0);
+            if (now < checkTime) {
+                setTimeout(() => {
+                    if (localStorage.getItem('study_state') !== 'active') {
+                        // Only fire if still inside the slot
+                        const slot2 = getCurrentSlot();
+                        if (slot2 && slot2.subject === slot.subject) {
+                            const msg = savageMessages[Math.floor(Math.random() * savageMessages.length)];
+                            sendContextNotification('savage', msg);
+                        }
+                    }
+                }, checkTime - now);
+            }
+        }
+    });
+
+    // ── 4. Night warning: 11:30 PM ───────────────────────────
+    const night = new Date(); night.setHours(23, 30, 0, 0);
+    if (now < night) {
+        setTimeout(() => {
+            if (localStorage.getItem('study_state') === 'active') {
+                sendContextNotification('savage', 'রাত ১১:৩০। ঘুমাও এবার, মাথা ঠান্ডা রেখে কাল পড়ো।');
+            }
+        }, night - now);
+    }
+
+    // ── 5. Exam countdown: if ≤ 3 days left ─────────────────
+    const examDate = new Date("April 10, 2026 11:00:00");
+    const daysLeft = Math.floor((examDate - now) / 86400000);
+    if (daysLeft <= 3 && daysLeft > 0) {
+        setTimeout(() => {
+            sendContextNotification('morning', `⚠️ মাত্র ${daysLeft} দিন বাকি! Final revision শুরু করো।`);
+        }, 5000);
+    }
+
+    // ── 6. Reschedule everything tomorrow at midnight ────────
+    const tomorrow = new Date(); tomorrow.setHours(24, 0, 0, 0);
+    setTimeout(() => scheduleContextNotifications(), tomorrow - now);
+}
+
+// ── Check-in Scheduler ───────────────────────────────────────
+// Called once when timer starts, and again after each "Yes" response.
+// Fires the study-check notification after 60 minutes.
+let checkInTimeout = null;
+
+function scheduleCheckIn() {
+    if (checkInTimeout) clearTimeout(checkInTimeout);
+    checkInTimeout = setTimeout(() => {
+        if (localStorage.getItem('study_state') === 'active') {
+            triggerCheckIn();
+        }
+    }, 60 * 60 * 1000); // 1 hour
+}
+
+function clearCheckIn() {
+    if (checkInTimeout) { clearTimeout(checkInTimeout); checkInTimeout = null; }
+}
+
+// ── Check-in Trigger ─────────────────────────────────────────
+function triggerCheckIn() {
+    // Quiet hours: 11 PM – 7 AM — skip notification, reschedule for later
+    const hour = new Date().getHours();
+    if (hour >= 23 || hour < 7) {
+        scheduleCheckIn(); // retry in another 60 mins
+        return;
+    }
+
+    // Send the check-in notification
+    sendContextNotification('study-check', 'Are you still studying, Rongon?');
+
+    // Auto-stop if no response in 5 mins
+    if (autoStopTimeout) clearTimeout(autoStopTimeout);
+    autoStopTimeout = setTimeout(() => {
+        if (localStorage.getItem('study_state') === 'active') {
+            stopStudy();
+            sendContextNotification('savage', '🛑 Timer stopped — no response in 5 mins.');
+            // Savage roast after 10 more mins of inactivity
+            setTimeout(() => {
+                if (localStorage.getItem('study_state') !== 'active') {
+                    const msg = savageMessages[Math.floor(Math.random() * savageMessages.length)];
+                    sendContextNotification('savage', msg);
+                }
+            }, 10 * 60 * 1000);
+        }
+    }, 5 * 60 * 1000);
+}
+
+// ── Notification Sender ──────────────────────────────────────
+async function sendContextNotification(type, body) {
+    const payload = { title: getNotifTitle(type), body, type };
+
+    // Method 1: Service Worker showNotification (works even when tab hidden)
+    if (Notification.permission === 'granted' && swReg) {
+        try {
+            await swReg.showNotification(payload.title, {
+                body,
+                icon: 'https://cdn-icons-png.flaticon.com/512/564/564619.png',
+                badge: 'https://cdn-icons-png.flaticon.com/512/564/564619.png',
+                tag: type,
+                vibrate: type === 'savage' ? [300, 100, 300, 100, 300] : [200, 100, 200],
+                renotify: true,
+                requireInteraction: ['study-check', 'break-over', 'morning'].includes(type),
+                actions: type === 'study-check' ? [
+                    { action: 'yes',   title: '✅ Still studying' },
+                    { action: 'break', title: '☕ Take a break'   }
+                ] : type === 'break-over' ? [
+                    { action: 'resume', title: '📚 Resume Study' }
+                ] : [],
+                data: { type }
+            });
+            return;
+        } catch (e) { console.warn('SW notification failed:', e); }
+    }
+
+    // Method 2: Basic Notification API fallback
+    if (Notification.permission === 'granted') {
+        new Notification(payload.title, { body, icon: 'https://cdn-icons-png.flaticon.com/512/564/564619.png' });
+        return;
+    }
+
+    // Method 3: In-page toast (no permission)
+    showToast(`${payload.title}: ${body}`);
+}
+
+function getNotifTitle(type) {
+    return {
+        'study-check': '⏱️ Study Check',
+        'savage':       '⚠️ Savage Mode',
+        'break-over':  '🔔 Break Over',
+        'morning':     '🌅 Morning Call',
+    }[type] || '📚 Study Sync';
+}
+
+// ── Toast ────────────────────────────────────────────────────
+function showToast(msg, duration = 4000) {
+    const log = document.getElementById('notif-log');
+    const toast = document.createElement('div');
+    toast.className = 'notif-toast bn';
+    toast.textContent = msg;
+    log.appendChild(toast);
+    setTimeout(() => toast.remove(), duration);
+}
+
+// ── Study Session ────────────────────────────────────────────
+function startStudy() {
+    localStorage.setItem('study_state', 'active');
+    startTime = Date.now();
+    document.getElementById('start-btn').style.display = 'none';
+    document.getElementById('stop-btn').style.display = 'block';
+    document.getElementById('tracker-card').style.borderColor = 'var(--success)';
+    studyInterval = setInterval(() => {
+        const diff = Math.floor((Date.now() - startTime) / 1000);
+        const h = Math.floor(diff / 3600).toString().padStart(2, '0');
+        const m = Math.floor((diff % 3600) / 60).toString().padStart(2, '0');
+        const s = (diff % 60).toString().padStart(2, '0');
+        document.getElementById('session-timer').innerText = `${h}:${m}:${s}`;
+    }, 1000);
+    scheduleCheckIn(); // first check-in after 60 mins
+}
+
+function stopStudy() {
+    localStorage.setItem('study_state', 'inactive');
+    clearInterval(studyInterval);
+    clearCheckIn();
+    if (autoStopTimeout) { clearTimeout(autoStopTimeout); autoStopTimeout = null; }
+    if (startTime) {
+        const sessionSecs = Math.floor((Date.now() - startTime) / 1000);
+        totalSecondsToday += sessionSecs;
+        localStorage.setItem('total_focus_seconds', totalSecondsToday);
+        localStorage.setItem('last_study_date', new Date().toDateString());
+    }
+    startTime = null;
+    document.getElementById('start-btn').style.display = 'block';
+    document.getElementById('stop-btn').style.display = 'none';
+    document.getElementById('tracker-card').style.borderColor = 'white';
+    document.getElementById('session-timer').innerText = '00:00:00';
+    updateTotalFocusDisplay();
+}
+
+function updateTotalFocusDisplay() {
+    const h = Math.floor(totalSecondsToday / 3600);
+    const m = Math.floor((totalSecondsToday % 3600) / 60);
+    document.getElementById('total-focus-today').innerHTML =
+        `<span class="bn">আজকের মোট ফোকাস:</span> <span style="font-family:'Outfit';font-weight:600;">${h}h ${m}m</span>`;
+}
+
+// ── Render ───────────────────────────────────────────────────
+function render() {
+    const rows = document.getElementById('routine-rows');
+    if (!rows) return;
+    rows.innerHTML = routine.map((day, dIdx) => `
+        <tr>
+            <td class="bn" style="font-weight:600;">${day.date}</td>
+            <td>${draw(day.p, `p-${dIdx}`)}</td>
+            <td>${draw(day.c, `c-${dIdx}`)}</td>
+            <td>${draw(day.b, `b-${dIdx}`)}</td>
+            <td>${draw(day.m, `m-${dIdx}`)}</td>
+        </tr>
+    `).join('');
+    updateAnalytics();
+}
+
+function draw(chapters, prefix) {
+    return chapters.map((ch, i) => {
+        const id = `${prefix}-${i}`;
+        const done = localStorage.getItem(id) === 'true';
+        const isBig = [
+            "নিউটনিয়ান বলবিদ্যা","স্থির তড়িৎ","চলতড়িৎ","তাপগতিবিদ্যা",
+            "কোষ ও এর গঠন","অনুজীব","উদ্ভিদ শারীরতত্ব","জীব প্রযুক্তি",
+            "প্রাণীর বিভিন্নতা","প্রাণীর পরিচিতি","পরিপাক ও শোষণ",
+            "রক্ত ও সঞ্চালন","চলন ও অঙ্গচালনা","জিনতত্ব ও বিবর্তন",
+            "জৈব রসায়ন"
+        ].some(w => ch.includes(w));
+        return `<div class="ch-row bn ${done ? 'checked' : ''}" onclick="toggle('${id}')">
+            <input type="checkbox" ${done ? 'checked' : ''}>
+            <span class="${isBig ? 'priority' : ''}">${ch}</span>
+        </div>`;
+    }).join('');
+}
+
+window.toggle = (id) => {
+    localStorage.setItem(id, localStorage.getItem(id) !== 'true');
+    render();
+    updateMission();
+};
+
+function updateAnalytics() {
+    const subjects = [
+        { n:'পদার্থবিজ্ঞান', k:'p', c:'var(--phy)',  total:14 },
+        { n:'রসায়ন',         k:'c', c:'var(--chem)', total:8  },
+        { n:'জীববিজ্ঞান',    k:'b', c:'var(--bio)',  total:14 },
+        { n:'উচ্চতর গণিত',   k:'m', c:'var(--math)', total:12 }
+    ];
+    let gDone = 0, gTotal = 0;
+
+    const stats = subjects.map(s => {
+        let subDone = 0;
+        routine.forEach((day, d) => {
+            (day[s.k] || []).forEach((_, ci) => {
+                if (localStorage.getItem(`${s.k}-${d}-${ci}`) === 'true') subDone++;
+            });
+        });
+        gDone += subDone; gTotal += s.total;
+        const pct = Math.round((subDone / s.total) * 100);
+        return `<div class="sub-row">
+            <div class="tooltip bn">${subDone} টি শেষ, ${s.total - subDone} টি বাকি</div>
+            <div class="sub-meta bn"><span>${s.n}</span><span>${pct}%</span></div>
+            <div class="progress-rail"><div class="progress-bar" style="width:${pct}%;background:${s.c}"></div></div>
+        </div>`;
+    }).join('');
+
+    document.getElementById('sub-stats').innerHTML = stats;
+    const overall = Math.round((gDone / gTotal) * 100);
+    document.getElementById('total-pct-text').innerText = overall + '%';
+    const circle = document.getElementById('circle-val');
+    if (circle) circle.style.strokeDasharray = `${(overall / 100) * 251} 251`;
+    const streak = gDone > 0 ? (localStorage.getItem('study_streak') || 1) : 0;
+    document.getElementById('streak-count').innerText = streak;
+}
+
+function updateMission() {
+    const todayStr = new Date().toLocaleDateString('bn-BD', { day: 'numeric', month: 'long' });
+    document.getElementById('today-date').innerText = todayStr;
+    const dayIdx = routine.findIndex(d => d.date.includes(todayStr.split(' ')[0]));
+    const idx = dayIdx !== -1 ? dayIdx : 0;
+    const day = routine[idx];
+    const missionIds = [`p-${idx}-0`, `c-${idx}-0`, `b-${idx}-0`, `m-${idx}-0`];
+    const names = [day.p[0], day.c[0], day.b[0], day.m[0]];
+
+    document.getElementById('focus-items').innerHTML = names.map((n, i) => {
+        const done = localStorage.getItem(missionIds[i]) === 'true';
+        return `<div class="focus-box bn ${done ? 'done' : ''}" onclick="toggle('${missionIds[i]}')">
+            <div class="dot"></div><span style="font-weight:600;">${n}</span>
+        </div>`;
+    }).join('');
+}
+
+function updateTimer() {
+    const examDate = new Date("April 10, 2026 11:00:00");
+    const diff = examDate - new Date();
+    if (diff > 0) {
+        document.getElementById('days-val').innerText = Math.floor(diff / 86400000).toString().padStart(2, '0');
+        document.getElementById('hours-val').innerText = Math.floor((diff % 86400000) / 3600000).toString().padStart(2, '0');
+    }
+}
+
+function resetAll() {
+    if (confirm("সব ডাটা মুছে ফেলতে চান? এটি আর ফিরিয়ে আনা যাবে না।")) {
+        localStorage.clear();
+        location.reload();
+    }
+}
+
+// ── VAPID Helper ─────────────────────────────────────────────
+function urlBase64ToUint8Array(base64String) {
+    const padding = '='.repeat((4 - base64String.length % 4) % 4);
+    const base64 = (base64String + padding).replace(/-/g, '+').replace(/_/g, '/');
+    const rawData = atob(base64);
+    return new Uint8Array([...rawData].map(c => c.charCodeAt(0)));
+}
+
+init();
+</script>
+</body>
+</html>
